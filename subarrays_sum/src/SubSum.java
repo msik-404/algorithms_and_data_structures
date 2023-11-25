@@ -48,11 +48,36 @@ public class SubSum {
         return outputs;
     }
 
+    public static List<Integer> v3(List<Integer> input, int k) {
+
+        var n = input.size();
+
+        var subArraysAmount = n - k + 1;
+        var outputs = new ArrayList<Integer>(subArraysAmount);
+
+        var initSum = 0;
+        for (int i = 0; i < k; i++) {
+            initSum += input.get(i);
+        }
+        outputs.add(initSum);
+
+        var lastSubArrayIdx = n - k;
+
+        for (int i = 1; i <= lastSubArrayIdx; i++) {
+            var previousInitValue = input.get(i - 1);
+            var currLastValue = input.get(i + (k - 1));
+            outputs.add(outputs.get(i - 1) - previousInitValue + currLastValue);
+        }
+
+        return outputs;
+
+    }
+
     public static void main(String[] args) {
 
-        var input = List.of(5, 6, 7, 2, 8, 9);
+        var input = List.of(1, 0, 0, 1, 2, 3, 0, 1, 2, 0);
         var k = 3;
 
-        System.out.println(v2(input, k));
+        System.out.println(v3(input, k));
     }
 }
