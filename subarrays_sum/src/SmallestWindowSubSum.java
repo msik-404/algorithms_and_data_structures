@@ -72,7 +72,8 @@ public class SmallestWindowSubSum {
     public static void main(String[] args) {
 
 //        var input = List.of(1, 2, 3, 4, 5, 7);
-        var input = List.of(1, 2, 3, 4, 3, 6, 0, 1, 5, 1, 6, 7, 7);
+//        var input = List.of(1, 2, 3, 4, 3, 6, 0, 1, 5, 1, 6, 7, 7);
+        var input = List.of(1, 2, 3, 4, 7, 0, 0, 0);
         var x = 7;
 
         System.out.println(other(input, x));
