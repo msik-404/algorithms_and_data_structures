@@ -1,9 +1,12 @@
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This algorithm solves the problem of finding for each index smallest sub-array such that sum of it's elements are equal
+ * or grater than some x.
+ */
 public class SmallestWindowSubSum {
 
-    // get smallest sub-array which sum is greater than x.
     public static List<List<Integer>> other(List<Integer> input, int x) {
 
         var n = input.size();
