@@ -1,6 +1,4 @@
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Optional;
+import java.util.*;
 
 public class Trie {
 
@@ -23,6 +21,10 @@ public class Trie {
             return childCount == 0;
         }
 
+        public boolean isOutput() {
+            return isOutput;
+        }
+
         public boolean hasChild(char symbol) {
             return null != children[symbol];
         }
@@ -33,6 +35,20 @@ public class Trie {
                 return Optional.of(children[symbol]);
             }
             return Optional.empty();
+        }
+
+        // Node symbol will be needed to be remembered to updated child tables on child deletion.
+        public record NodeWithSymbol(Node node, char symbol) {}
+
+        public List<NodeWithSymbol> getChildren() {
+
+            List<NodeWithSymbol> output = new ArrayList<>();
+            for (int i = 0; i < ASCII_TABLE_SIZE; i++) {
+                if (children[i] != null) {
+                    output.add(new NodeWithSymbol(children[i], (char) i));
+                }
+            }
+            return output;
         }
 
         public Node addChild(char symbol) {
@@ -95,11 +111,8 @@ public class Trie {
      */
     public boolean delete(String word) {
 
-        // Node symbol will be needed to be remembered to updated child tables on child deletion.
-        record NodeWithSymbol(Node node, char symbol) {}
-
         // Find requested word's nodes to be potentially deleted.
-        Deque<NodeWithSymbol> stack = new LinkedList<>();
+        Deque<Node.NodeWithSymbol> stack = new LinkedList<>();
         var currTraversed = root;
 
         for (int i = 0; i < word.length(); i++) {
@@ -109,14 +122,14 @@ public class Trie {
                 return false;
             }
             currTraversed = optionalCurr.get();
-            stack.add(new NodeWithSymbol(currTraversed, currChar));
+            stack.add(new Node.NodeWithSymbol(currTraversed, currChar));
         }
 
         // If last node won't be able to be deleted, isOutput needs to be set to false.
         stack.peekLast().node.isOutput = false;
 
         // keep removing nodes from the trie if they are leaves. Update parent child list of deleted child.
-        NodeWithSymbol curr;
+        Node.NodeWithSymbol curr;
         Character prevSymbol = null;
         while (!stack.isEmpty()) {
 
@@ -126,7 +139,7 @@ public class Trie {
                 curr.node.deleteChild(prevSymbol);
             }
             if (curr.node.isLeaf() && !curr.node.isOutput) {
-                prevSymbol = curr.symbol;
+                prevSymbol = curr.symbol();
             } else {
                 return true;
             }
@@ -134,9 +147,69 @@ public class Trie {
         return true;
     }
 
+    /**
+     * @param word String for which suggestions should be returned.
+     * @return List of word suggestions which are present in the tree.
+     */
+    public List<String> findSuggestions(String word) {
+
+        Node lastNode = root;
+        int lastIdx = 0;
+
+        for (int i = 0; i < word.length(); i++) {
+
+            var currChar = word.charAt(i);
+            var optionalCurr = lastNode.getChild(currChar);
+            lastIdx = i;
+            if (optionalCurr.isEmpty()) {
+                break;
+            }
+            lastNode = optionalCurr.get();
+        }
+
+        List<String> suffixes = new ArrayList<>();
+
+        record NodeWithDepth(Node.NodeWithSymbol nodeWithSymbol, int depth) {}
+
+        Deque<NodeWithDepth> stack = new LinkedList<>();
+        stack.add(new NodeWithDepth(new Node.NodeWithSymbol(lastNode, (char) 0), 0));
+
+        List<NodeWithDepth> traverseOrderList = new ArrayList<>();
+
+        while (!stack.isEmpty()) {
+            var curr = stack.pollLast();
+            traverseOrderList.add(curr);
+            var depth = curr.depth() + 1;
+            for (Node.NodeWithSymbol child : curr.nodeWithSymbol().node().getChildren()) {
+                stack.add(new NodeWithDepth(child, depth));
+            }
+        }
+
+        var prefix = word.substring(0, lastIdx + 1);
+        var builder = new StringBuilder(prefix);
+        for (int i = 1; i < traverseOrderList.size(); i++) {
+            var curr = traverseOrderList.get(i);
+            var depth = curr.depth();
+            var currNodeWithSymbol = curr.nodeWithSymbol();
+            var currNode = currNodeWithSymbol.node();
+            var currSymbol = currNodeWithSymbol.symbol();
+
+            if (depth > builder.length() - prefix.length()) {
+                builder.append(currSymbol);
+            } else {
+                builder.setCharAt(prefix.length() + depth - 1, currSymbol);
+            }
+            if (currNode.isOutput()) {
+                suffixes.add(builder.substring(0, prefix.length() + depth));
+            }
+        }
+
+        return suffixes;
+    }
+
     public static void main(String[] args) {
 
-        var text = "Hello I am under the water und";
+        var text = "Hello I am under the water und undex undar uno";
 
         String[] words = text.split(" ");
 
@@ -146,11 +219,13 @@ public class Trie {
             trie.addWord(word);
         }
 
-//        trie.delete("under");
-        trie.delete("und");
+        trie.findSuggestions("un");
 
-        System.out.println(trie.contians("under"));
-        System.out.println(trie.contians("und"));
+//        trie.delete("under");
+//        trie.delete("und");
+
+//        System.out.println(trie.contians("under"));
+//        System.out.println(trie.contians("und"));
     }
 
 }
