@@ -160,56 +160,54 @@ public class Trie {
 
             var currChar = word.charAt(i);
             var optionalCurr = lastNode.getChild(currChar);
-            lastIdx = i;
             if (optionalCurr.isEmpty()) {
                 break;
             }
+            lastIdx = i;
             lastNode = optionalCurr.get();
         }
 
-        List<String> suffixes = new ArrayList<>();
+        List<String> suggestions = new ArrayList<>();
 
         record NodeWithDepth(Node.NodeWithSymbol nodeWithSymbol, int depth) {}
 
         Deque<NodeWithDepth> stack = new LinkedList<>();
         stack.add(new NodeWithDepth(new Node.NodeWithSymbol(lastNode, (char) 0), 0));
 
-        List<NodeWithDepth> traverseOrderList = new ArrayList<>();
+        var prefix = lastIdx == 0 ? "" : word.substring(0, lastIdx + 1);
+        var builder = new StringBuilder(prefix);
 
         while (!stack.isEmpty()) {
+
             var curr = stack.pollLast();
-            traverseOrderList.add(curr);
+
+            if (curr.depth() > 0) { // Skip root node, because it does not correspond to any symbol.
+                var currNodeWithSymbol = curr.nodeWithSymbol();
+                var currNode = currNodeWithSymbol.node();
+                var currSymbol = currNodeWithSymbol.symbol();
+
+                if (curr.depth() > builder.length() - prefix.length()) {
+                    builder.append(currSymbol);
+                } else {
+                    builder.setCharAt(prefix.length() + curr.depth() - 1, currSymbol);
+                }
+                if (currNode.isOutput()) {
+                    suggestions.add(builder.substring(0, prefix.length() + curr.depth()));
+                }
+            }
+
             var depth = curr.depth() + 1;
             for (Node.NodeWithSymbol child : curr.nodeWithSymbol().node().getChildren()) {
                 stack.add(new NodeWithDepth(child, depth));
             }
         }
 
-        var prefix = word.substring(0, lastIdx + 1);
-        var builder = new StringBuilder(prefix);
-        for (int i = 1; i < traverseOrderList.size(); i++) {
-            var curr = traverseOrderList.get(i);
-            var depth = curr.depth();
-            var currNodeWithSymbol = curr.nodeWithSymbol();
-            var currNode = currNodeWithSymbol.node();
-            var currSymbol = currNodeWithSymbol.symbol();
-
-            if (depth > builder.length() - prefix.length()) {
-                builder.append(currSymbol);
-            } else {
-                builder.setCharAt(prefix.length() + depth - 1, currSymbol);
-            }
-            if (currNode.isOutput()) {
-                suffixes.add(builder.substring(0, prefix.length() + depth));
-            }
-        }
-
-        return suffixes;
+        return suggestions;
     }
 
     public static void main(String[] args) {
 
-        var text = "Hello I am under the water und undex undar uno";
+        var text = "Hello I am under the water und undex undar uno mateusz mati mateufs marian maniek mama maja manja";
 
         String[] words = text.split(" ");
 
@@ -219,7 +217,7 @@ public class Trie {
             trie.addWord(word);
         }
 
-        trie.findSuggestions("un");
+        trie.findSuggestions("x");
 
 //        trie.delete("under");
 //        trie.delete("und");
