@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 
-public class RegEx {
+public class DfaMatcher {
 
     private static final char minChar = ' ';
     private static final char maxChar = '~';
